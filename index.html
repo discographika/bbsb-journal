@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="last-updated" content="">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="" name="last-updated"/>
 <title>BB/SB Trading Journal</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -301,148 +302,140 @@ td.dim   { color: var(--text-3); }
 </style>
 </head>
 <body>
-
 <!-- ── Header ── -->
 <header class="header">
-  <div class="brand">
-    <span class="brand-name">BB / SB</span>
-    <span class="brand-badge">The5ers · Bootcamp · Ph.1</span>
-  </div>
-  <div class="header-divider"></div>
-  <div class="stats-strip">
-    <div class="stat">
-      <span class="stat-label">Account</span>
-      <span class="stat-value c-accent">$25,000</span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">Std risk</span>
-      <span class="stat-value">1% · $250</span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">Hard cap</span>
-      <span class="stat-value">2% · $500</span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">Max DD</span>
-      <span class="stat-value c-warn">$1,250</span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">Target</span>
-      <span class="stat-value c-bull">$1,500</span>
-    </div>
-  </div>
-  <div class="header-right">
-    <div class="pulse"></div>
-    <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-3)" id="last-updated-label">—</span>
-  </div>
+<div class="brand">
+<span class="brand-name">BB / SB</span>
+<span class="brand-badge">The5ers · Bootcamp · Ph.1</span>
+</div>
+<div class="header-divider"></div>
+<div class="stats-strip">
+<div class="stat">
+<span class="stat-label">Account</span>
+<span class="stat-value c-accent">$25,000</span>
+</div>
+<div class="stat">
+<span class="stat-label">Std risk</span>
+<span class="stat-value">1% · $250</span>
+</div>
+<div class="stat">
+<span class="stat-label">Hard cap</span>
+<span class="stat-value">2% · $500</span>
+</div>
+<div class="stat">
+<span class="stat-label">Max DD</span>
+<span class="stat-value c-warn">$1,250</span>
+</div>
+<div class="stat">
+<span class="stat-label">Target</span>
+<span class="stat-value c-bull">$1,500</span>
+</div>
+</div>
+<div class="header-right">
+<div class="pulse"></div>
+<span id="last-updated-label" style="font-family:var(--font-mono);font-size:10px;color:var(--text-3)">—</span>
+</div>
 </header>
-
 <!-- ── Nav ── -->
 <nav class="nav">
-  <div class="tab active" data-tab="wb">Weekly Bias <span class="tab-count" id="tc-wb"></span></div>
-  <div class="tab" data-tab="tl">Trade Log <span class="tab-count" id="tc-tl"></span></div>
-  <div class="tab" data-tab="dc">Daily Checkin <span class="tab-count" id="tc-dc"></span></div>
+<div class="tab active" data-tab="wb">Weekly Bias <span class="tab-count" id="tc-wb"></span></div>
+<div class="tab" data-tab="tl">Trade Log <span class="tab-count" id="tc-tl"></span></div>
+<div class="tab" data-tab="dc">Daily Checkin <span class="tab-count" id="tc-dc"></span></div>
 </nav>
-
 <!-- ── Weekly Bias ── -->
-<section id="wb" class="section active">
-  <div class="section-header">
-    <span class="section-title">Weekly Bias</span>
-    <span class="section-sub">EURUSD · XAUUSD · GBPUSD · GBPJPY · USDJPY · NAS100</span>
-  </div>
-  <div class="table-wrap">
-    <table id="weekly-bias">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Instrument</th>
-          <th>W_Bias</th>
-          <th>Valuation</th>
-          <th>Seasonal</th>
-          <th>COT_Index_Value</th>
-          <th>COT_Verdict</th>
-          <th>Macro_Status</th>
-          <th>D1_Zone_Type</th>
-          <th>D1_Zone_Top</th>
-          <th>D1_Zone_Bot</th>
-          <th>D1_POC</th>
-          <th>H4_Zone_Type</th>
-          <th>H4_Zone_Top</th>
-          <th>H4_Zone_Bot</th>
-          <th>H4_OB</th>
-          <th>H4_POC</th>
-          <th>Sweep_Watch</th>
-          <th>Trade_Y_N</th>
-          <th>Min_Grade</th>
-          <th>Notes</th>
-        </tr>
-      </thead>
-      <tbody>
-      </tbody>
-    </table>
-  </div>
+<section class="section active" id="wb">
+<div class="section-header">
+<span class="section-title">Weekly Bias</span>
+<span class="section-sub">EURUSD · XAUUSD · GBPUSD · GBPJPY · USDJPY · NAS100</span>
+</div>
+<div class="table-wrap">
+<table id="weekly-bias">
+<thead>
+<tr>
+<th>Date</th>
+<th>Instrument</th>
+<th>W_Bias</th>
+<th>Valuation</th>
+<th>Seasonal</th>
+<th>COT_Index_Value</th>
+<th>COT_Verdict</th>
+<th>Macro_Status</th>
+<th>D1_Zone_Type</th>
+<th>D1_Zone_Top</th>
+<th>D1_Zone_Bot</th>
+<th>D1_POC</th>
+<th>H4_Zone_Type</th>
+<th>H4_Zone_Top</th>
+<th>H4_Zone_Bot</th>
+<th>H4_OB</th>
+<th>H4_POC</th>
+<th>Sweep_Watch</th>
+<th>Trade_Y_N</th>
+<th>Min_Grade</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr><td>2026-07-06</td><td>EURUSD</td><td>BEARISH</td><td>BEAR (overvalued)</td><td>BEAR (0.971 seasonal)</td><td>N/A</td><td>OPPOSING (bull COT)</td><td>SKIP</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>NO</td><td>NO</td><td>N/A</td><td>COT opposing bearish — veto</td></tr><tr><td>2026-07-06</td><td>XAUUSD</td><td>BEARISH</td><td>—</td><td>BEAR (2262 seasonal)</td><td>N/A</td><td>OPPOSING (bull COT)</td><td>SKIP</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>NO</td><td>NO</td><td>N/A</td><td>COT opposing — veto</td></tr><tr><td>2026-07-06</td><td>GBPUSD</td><td>BEARISH</td><td>BEAR (+14.56)</td><td>BULL (1.654 seasonal)</td><td>100.00%</td><td>FULL DIVERGENCE BULL</td><td>SKIP</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>NO</td><td>NO</td><td>N/A</td><td>6B1! 100% MAX all-time high—watch for reversal</td></tr><tr><td>2026-07-06</td><td>GBPJPY</td><td>BULLISH</td><td>BULL (-6.28)</td><td>NEUTRAL (214.38 seasonal)</td><td>6B1! 100% / 6J1! 94.63%</td><td>CONFLICT</td><td>SKIP</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>NO</td><td>NO</td><td>N/A</td><td>JPY COT 94.63% opposes GBPJPY long</td></tr><tr><td>2026-07-06</td><td>USDJPY</td><td>BULLISH</td><td>BEAR (+5.23)</td><td>BEAR (156.46 seasonal)</td><td>94.63% (6J1! INVERTED)</td><td>OPPOSING</td><td>SKIP</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>NO</td><td>NO</td><td>N/A</td><td>ATH 162.841 but all macro bearish — potential major top</td></tr><tr><td>2026-07-06</td><td>NAS100</td><td>BULLISH</td><td>BULL (-60.2)</td><td>BEAR (27773 seasonal)</td><td>77.28%</td><td>PARTIAL</td><td>WEAK</td><td>DEMAND</td><td>29877</td><td>28889</td><td>29300</td><td>DEMAND</td><td>29575</td><td>29026</td><td>29297-29404</td><td>29300</td><td>NO</td><td>NO</td><td>A+ only 0.5%</td><td>WEAK macro; D1+4H zones MITIGATED — no trade</td></tr></tbody>
+</table>
+</div>
 </section>
-
 <!-- ── Trade Log ── -->
-<section id="tl" class="section">
-  <div class="section-header">
-    <span class="section-title">Trade Log</span>
-  </div>
-  <div class="table-wrap">
-    <table id="trade-log">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Instrument</th>
-          <th>Direction</th>
-          <th>Entry</th>
-          <th>SL</th>
-          <th>TP1</th>
-          <th>TP2</th>
-          <th>Grade</th>
-          <th>Risk</th>
-          <th>Setup</th>
-          <th>Notes</th>
-        </tr>
-      </thead>
-      <tbody>
-      </tbody>
-    </table>
-  </div>
+<section class="section" id="tl">
+<div class="section-header">
+<span class="section-title">Trade Log</span>
+</div>
+<div class="table-wrap">
+<table id="trade-log">
+<thead>
+<tr>
+<th>Date</th>
+<th>Instrument</th>
+<th>Direction</th>
+<th>Entry</th>
+<th>SL</th>
+<th>TP1</th>
+<th>TP2</th>
+<th>Grade</th>
+<th>Risk</th>
+<th>Setup</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+</div>
 </section>
-
 <!-- ── Daily Checkin ── -->
-<section id="dc" class="section">
-  <div class="section-header">
-    <span class="section-title">Daily Checkin</span>
-  </div>
-  <div class="table-wrap">
-    <table id="daily-checkin">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Time</th>
-          <th>Instrument</th>
-          <th>Status</th>
-          <th>Price</th>
-          <th>Zone_Top</th>
-          <th>Zone_Bot</th>
-          <th>CHoCH</th>
-          <th>Pattern</th>
-          <th>Notes</th>
-        </tr>
-      </thead>
-      <tbody>
-      </tbody>
-    </table>
-  </div>
+<section class="section" id="dc">
+<div class="section-header">
+<span class="section-title">Daily Checkin</span>
+</div>
+<div class="table-wrap">
+<table id="daily-checkin">
+<thead>
+<tr>
+<th>Date</th>
+<th>Time</th>
+<th>Instrument</th>
+<th>Status</th>
+<th>Price</th>
+<th>Zone_Top</th>
+<th>Zone_Bot</th>
+<th>CHoCH</th>
+<th>Pattern</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+</div>
 </section>
-
 <footer class="footer">
-  <span>BB/SB Strategy v3.2 · The5ers Bootcamp Phase 1 · 1% risk per trade</span>
-  <span id="footer-ts"></span>
+<span>BB/SB Strategy v3.2 · The5ers Bootcamp Phase 1 · 1% risk per trade</span>
+<span id="footer-ts"></span>
 </footer>
-
 <script>
 (function () {
   // Tab switching
