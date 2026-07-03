@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="last-updated" content="">
+<title>BB/SB Trading Journal</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #0B0D12;
+  --surface:    #111318;
+  --surface-2:  #161A22;
+  --border:     #1C2030;
+  --border-2:   #242A3C;
+  --text-1:     #D6DCF0;
+  --text-2:     #515E82;
+  --text-3:     #2E3650;
+  --accent:     #3D8CFF;
+  --accent-dim: #132240;
+  --bull:       #2DC98A;
+  --bull-dim:   #0C2B1E;
+  --bear:       #E05050;
+  --bear-dim:   #2F1212;
+  --warn:       #F0A830;
+  --warn-dim:   #2E2008;
+  --skip-dim:   #13151C;
+  --font-mono:  'Cascadia Code', 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  --font-ui:    'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 11px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  min-height: 48px;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.brand-name {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-1);
+}
+
+.brand-badge {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  border: 1px solid var(--border-2);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.header-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border-2);
+  flex-shrink: 0;
+}
+
+.stats-strip {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.stat-label {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.stat-value.c-accent { color: var(--accent); }
+.stat-value.c-warn   { color: var(--warn); }
+.stat-value.c-bull   { color: var(--bull); }
+.stat-value.c-muted  { color: var(--text-2); }
+
+.header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bull);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* ── Nav tabs ── */
+.nav {
+  display: flex;
+  align-items: flex-end;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  position: sticky;
+  top: 48px;
+  z-index: 99;
+  gap: 0;
+}
+
+.tab {
+  padding: 10px 18px 9px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  letter-spacing: 0.02em;
+  transition: color 0.15s, border-color 0.15s;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.tab:hover { color: var(--text-1); }
+
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.tab-count {
+  display: inline-block;
+  margin-left: 6px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+/* ── Section ── */
+.section { display: none; padding: 20px; }
+.section.active { display: block; }
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-1);
+  letter-spacing: 0.01em;
+}
+
+.section-sub {
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+/* ── Table ── */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+
+thead th {
+  background: var(--surface-2);
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+tbody tr:last-child { border-bottom: none; }
+
+tbody tr:nth-child(odd)  { background: var(--bg); }
+tbody tr:nth-child(even) { background: #0D1019; }
+tbody tr.row-bull        { background: var(--bull-dim) !important; }
+tbody tr.row-bear        { background: var(--bear-dim) !important; }
+tbody tr.row-skip        { background: var(--skip-dim) !important; }
+tbody tr.row-warn        { background: var(--warn-dim) !important; }
+tbody tr:hover           { background: var(--surface-2) !important; }
+
+tbody td {
+  padding: 7px 12px;
+  vertical-align: middle;
+  white-space: nowrap;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+td.muted { color: var(--text-2); }
+td.dim   { color: var(--text-3); }
+
+/* ── Chips ── */
+.chip {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  line-height: 1.6;
+}
+
+.chip-bull   { background: var(--bull-dim);   color: var(--bull);   }
+.chip-bear   { background: var(--bear-dim);   color: var(--bear);   }
+.chip-warn   { background: var(--warn-dim);   color: var(--warn);   }
+.chip-accent { background: var(--accent-dim); color: var(--accent); }
+.chip-skip   { background: #161A22;           color: var(--text-2); }
+.chip-ok     { background: #0F2820;           color: #3AC88A;       }
+
+/* ── Empty state ── */
+.empty {
+  padding: 56px 20px;
+  text-align: center;
+  border-top: none;
+}
+
+.empty-line { color: var(--text-3); font-family: var(--font-mono); font-size: 11px; }
+.empty-line + .empty-line { margin-top: 4px; }
+
+/* ── Footer ── */
+.footer {
+  padding: 10px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header class="header">
+  <div class="brand">
+    <span class="brand-name">BB / SB</span>
+    <span class="brand-badge">The5ers · Bootcamp · Ph.1</span>
+  </div>
+  <div class="header-divider"></div>
+  <div class="stats-strip">
+    <div class="stat">
+      <span class="stat-label">Account</span>
+      <span class="stat-value c-accent">$25,000</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Std risk</span>
+      <span class="stat-value">1% · $250</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Hard cap</span>
+      <span class="stat-value">2% · $500</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Max DD</span>
+      <span class="stat-value c-warn">$1,250</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Target</span>
+      <span class="stat-value c-bull">$1,500</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="pulse"></div>
+    <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-3)" id="last-updated-label">—</span>
+  </div>
+</header>
+
+<!-- ── Nav ── -->
+<nav class="nav">
+  <div class="tab active" data-tab="wb">Weekly Bias <span class="tab-count" id="tc-wb"></span></div>
+  <div class="tab" data-tab="tl">Trade Log <span class="tab-count" id="tc-tl"></span></div>
+  <div class="tab" data-tab="dc">Daily Checkin <span class="tab-count" id="tc-dc"></span></div>
+</nav>
+
+<!-- ── Weekly Bias ── -->
+<section id="wb" class="section active">
+  <div class="section-header">
+    <span class="section-title">Weekly Bias</span>
+    <span class="section-sub">EURUSD · XAUUSD · GBPUSD · GBPJPY · USDJPY · NAS100</span>
+  </div>
+  <div class="table-wrap">
+    <table id="weekly-bias">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Instrument</th>
+          <th>W_Bias</th>
+          <th>Valuation</th>
+          <th>Seasonal</th>
+          <th>COT_Index_Value</th>
+          <th>COT_Verdict</th>
+          <th>Macro_Status</th>
+          <th>D1_Zone_Type</th>
+          <th>D1_Zone_Top</th>
+          <th>D1_Zone_Bot</th>
+          <th>D1_POC</th>
+          <th>H4_Zone_Type</th>
+          <th>H4_Zone_Top</th>
+          <th>H4_Zone_Bot</th>
+          <th>H4_OB</th>
+          <th>H4_POC</th>
+          <th>Sweep_Watch</th>
+          <th>Trade_Y_N</th>
+          <th>Min_Grade</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── Trade Log ── -->
+<section id="tl" class="section">
+  <div class="section-header">
+    <span class="section-title">Trade Log</span>
+  </div>
+  <div class="table-wrap">
+    <table id="trade-log">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Instrument</th>
+          <th>Direction</th>
+          <th>Entry</th>
+          <th>SL</th>
+          <th>TP1</th>
+          <th>TP2</th>
+          <th>Grade</th>
+          <th>Risk</th>
+          <th>Setup</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── Daily Checkin ── -->
+<section id="dc" class="section">
+  <div class="section-header">
+    <span class="section-title">Daily Checkin</span>
+  </div>
+  <div class="table-wrap">
+    <table id="daily-checkin">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Instrument</th>
+          <th>Status</th>
+          <th>Price</th>
+          <th>Zone_Top</th>
+          <th>Zone_Bot</th>
+          <th>CHoCH</th>
+          <th>Pattern</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer class="footer">
+  <span>BB/SB Strategy v3.2 · The5ers Bootcamp Phase 1 · 1% risk per trade</span>
+  <span id="footer-ts"></span>
+</footer>
+
+<script>
+(function () {
+  // Tab switching
+  const tabs = document.querySelectorAll('.tab');
+  const sections = document.querySelectorAll('.section');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // Row tinting: reads a specific column index and maps to a CSS class
+  function tintRows(tableId, colIndex, map) {
+    const rows = document.querySelectorAll('#' + tableId + ' tbody tr');
+    rows.forEach(tr => {
+      const cells = tr.querySelectorAll('td');
+      if (!cells[colIndex]) return;
+      const val = cells[colIndex].textContent.trim().toUpperCase();
+      for (const [pattern, cls] of map) {
+        if (val.includes(pattern)) { tr.classList.add(cls); break; }
+      }
+    });
+    return rows.length;
+  }
+
+  const biasMap = [
+    ['BULL', 'row-bull'], ['BUY', 'row-bull'], ['LONG', 'row-bull'],
+    ['BEAR', 'row-bear'], ['SELL', 'row-bear'], ['SHORT', 'row-bear'],
+    ['SKIP', 'row-skip'],
+    ['WEAK', 'row-warn'], ['MODERATE', 'row-warn'], ['MOD', 'row-warn'],
+  ];
+
+  const dirMap = [
+    ['LONG', 'row-bull'], ['BUY', 'row-bull'],
+    ['SHORT', 'row-bear'], ['SELL', 'row-bear'],
+  ];
+
+  const statusMap = [
+    ['TRIGGERED', 'row-bull'],
+    ['ACTIVE', 'row-bull'],
+    ['WATCHING', 'row-warn'],
+    ['CAUTION', 'row-warn'],
+    ['INVALIDATED', 'row-bear'],
+  ];
+
+  const wbCount = tintRows('weekly-bias', 2, biasMap);
+  const tlCount = tintRows('trade-log',   2, dirMap);
+  const dcCount = tintRows('daily-checkin', 3, statusMap);
+
+  // Tab counts
+  function setCount(id, n) {
+    document.getElementById(id).textContent = n ? n : '';
+  }
+  setCount('tc-wb', wbCount);
+  setCount('tc-tl', tlCount);
+  setCount('tc-dc', dcCount);
+
+  // Empty states
+  function maybeEmpty(tableId, sectionId, label) {
+    const tbody = document.querySelector('#' + tableId + ' tbody');
+    if (tbody && tbody.querySelectorAll('tr').length === 0) {
+      const wrap = document.querySelector('#' + sectionId + ' .table-wrap');
+      const d = document.createElement('div');
+      d.className = 'empty';
+      d.innerHTML =
+        '<p class="empty-line">— no ' + label + ' data —</p>' +
+        '<p class="empty-line" style="margin-top:8px;color:var(--text-3)">Populated by the next /sd-sunday or /sd-checkin run</p>';
+      wrap.appendChild(d);
+    }
+  }
+  maybeEmpty('weekly-bias',   'wb', 'Weekly Bias');
+  maybeEmpty('trade-log',     'tl', 'Trade Log');
+  maybeEmpty('daily-checkin', 'dc', 'Daily Checkin');
+
+  // Timestamps
+  const meta = document.querySelector('meta[name="last-updated"]');
+  const ts = meta && meta.content ? meta.content : null;
+  const fmtDate = d => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' });
+  const fmtTime = d => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const now = new Date();
+  document.getElementById('last-updated-label').textContent = ts ? ts : (fmtDate(now) + ' ' + fmtTime(now));
+  document.getElementById('footer-ts').textContent = 'Generated ' + fmtDate(now) + ' ' + fmtTime(now);
+})();
+</script>
+</body>
+</html>
