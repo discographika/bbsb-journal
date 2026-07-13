@@ -573,6 +573,41 @@ td.dim   { color: var(--text-3); }
       wrap.appendChild(d);
     }
   }
+  // Persisted table state (column order + active sort) survives refresh via localStorage,
+  // keyed per table so each tab remembers its own layout.
+  const STATE_PREFIX = 'bbsb-journal-table:';
+
+  function loadTableState(tableId) {
+    try {
+      const raw = localStorage.getItem(STATE_PREFIX + tableId);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+
+  function saveTableState(tableId, patch) {
+    try {
+      const state = Object.assign({}, loadTableState(tableId), patch);
+      localStorage.setItem(STATE_PREFIX + tableId, JSON.stringify(state));
+    } catch (e) { /* localStorage unavailable (private mode, etc) — state just won't persist */ }
+  }
+
+  // Reorders every row (header + body) so its cells match a saved label order.
+  // Any current column not found in the saved order (e.g. added after the save) is appended at the end.
+  function applyColumnOrder(table, order) {
+    const headerRow = table.querySelector('thead tr');
+    if (!headerRow || !order || !order.length) return;
+    const currentLabels = Array.from(headerRow.children).map(th => th.textContent.trim());
+    const targetIndices = order.map(label => currentLabels.indexOf(label)).filter(i => i !== -1);
+    currentLabels.forEach((label, idx) => {
+      if (!targetIndices.includes(idx)) targetIndices.push(idx);
+    });
+    table.querySelectorAll('tr').forEach(row => {
+      const cells = Array.from(row.children);
+      if (cells.length !== currentLabels.length) return;
+      targetIndices.map(i => cells[i]).forEach(cell => row.appendChild(cell));
+    });
+  }
+
   // Column reordering: drag a th left/right to move its whole column, header + all rows
   function makeColumnsDraggable(tableId) {
     const table = document.getElementById(tableId);
@@ -621,42 +656,62 @@ td.dim   { color: var(--text-3); }
         if (dragSrcIndex === null || dragSrcIndex === toIndex) return;
         table.querySelectorAll('tr').forEach(row => moveColumn(row, dragSrcIndex, toIndex));
         dragSrcIndex = null;
+        saveTableState(tableId, { order: Array.from(headerRow.children).map(h => h.textContent.trim()) });
       });
     });
   }
-  makeColumnsDraggable('weekly-bias');
-  makeColumnsDraggable('trade-log');
-  makeColumnsDraggable('daily-checkin');
-  makeColumnsDraggable('closed-trades');
 
-  // Column sorting: click a th.sortable to sort its table by that column, toggling asc/desc
+  // Column sorting: click a th.sortable to sort its table by that column, toggling asc/desc.
+  // Returns the sort function so callers can replay a saved sort on load.
   function makeSortable(tableId) {
     const table = document.getElementById(tableId);
-    if (!table) return;
+    if (!table) return null;
     const tbody = table.querySelector('tbody');
     const headers = table.querySelectorAll('thead th.sortable');
+
+    function performSort(th, asc) {
+      const colIndex = th.cellIndex;
+      headers.forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+      th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      rows.sort((a, b) => {
+        const av = (a.children[colIndex] && a.children[colIndex].textContent.trim()) || '';
+        const bv = (b.children[colIndex] && b.children[colIndex].textContent.trim()) || '';
+        return asc
+          ? av.localeCompare(bv, undefined, { numeric: true, sensitivity: 'base' })
+          : bv.localeCompare(av, undefined, { numeric: true, sensitivity: 'base' });
+      });
+      rows.forEach(r => tbody.appendChild(r));
+    }
+
     headers.forEach(th => {
       th.addEventListener('click', () => {
-        const colIndex = th.cellIndex;
         const asc = !th.classList.contains('sort-asc');
-        headers.forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
-        th.classList.add(asc ? 'sort-asc' : 'sort-desc');
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-        rows.sort((a, b) => {
-          const av = (a.children[colIndex] && a.children[colIndex].textContent.trim()) || '';
-          const bv = (b.children[colIndex] && b.children[colIndex].textContent.trim()) || '';
-          return asc
-            ? av.localeCompare(bv, undefined, { numeric: true, sensitivity: 'base' })
-            : bv.localeCompare(av, undefined, { numeric: true, sensitivity: 'base' });
-        });
-        rows.forEach(r => tbody.appendChild(r));
+        performSort(th, asc);
+        saveTableState(tableId, { sort: { label: th.textContent.trim(), asc } });
       });
     });
+
+    return performSort;
   }
-  makeSortable('weekly-bias');
-  makeSortable('trade-log');
-  makeSortable('daily-checkin');
-  makeSortable('closed-trades');
+
+  // Restore saved column order first, then wire up drag/sort, then replay any saved sort —
+  // in that sequence so the restored order doesn't fight the live drag/sort handlers.
+  function initTable(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const state = loadTableState(tableId);
+    if (state.order) applyColumnOrder(table, state.order);
+    makeColumnsDraggable(tableId);
+    const performSort = makeSortable(tableId);
+    if (state.sort && performSort) {
+      const headers = table.querySelectorAll('thead th.sortable');
+      const target = Array.from(headers).find(h => h.textContent.trim() === state.sort.label);
+      if (target) performSort(target, state.sort.asc);
+    }
+  }
+
+  ['weekly-bias', 'trade-log', 'daily-checkin', 'closed-trades'].forEach(initTable);
 
   maybeEmpty('weekly-bias',   'wb', 'Weekly Bias');
   maybeEmpty('trade-log',     'tl', 'Trade Log');
