@@ -377,7 +377,6 @@ td.dim   { color: var(--text-3); }
 <nav class="nav">
 <div class="tab active" data-tab="wb">Weekly Bias <span class="tab-count" id="tc-wb"></span></div>
 <div class="tab" data-tab="dc">Daily Checkin <span class="tab-count" id="tc-dc"></span></div>
-<div class="tab" data-tab="tl">Trade Log <span class="tab-count" id="tc-tl"></span></div>
 <div class="tab" data-tab="ct">Closed Trades <span class="tab-count" id="tc-ct"></span></div>
 </nav>
 <!-- ── Weekly Bias ── -->
@@ -440,34 +439,6 @@ td.dim   { color: var(--text-3); }
 </thead>
 <tbody>
 <tr><td>2026-07-13</td><td>07:03</td><td>EURJPY</td><td>ACTIVE</td><td>184.657</td><td>184.601</td><td>183.925</td><td>184.660 (IMMINENT - 0.3 pips)</td><td>Watching for A+ pattern</td><td>Mon open gap to 184.321 (sweep). H4 zone not mitigated (4H close 184.621 &gt; midpoint 184.542). CHoCH target: 1H close &gt;184.660. Type 2 Sweep+CISD developing. Risk 0.5% only (COT CONFLICT). 33% SL rule: wait for 1H swing low inside zone.</td></tr><tr><td>2026-07-13</td><td>07:03</td><td>AUDUSD</td><td>WATCHING</td><td>0.69365</td><td>0.69043</td><td>0.68772</td><td></td><td></td><td>32 pips from D1 zone top. Drifting lower. Re-check 4H on approach.</td></tr><tr><td>2026-07-13</td><td>07:03</td><td>GBPUSD</td><td>WATCHING</td><td>1.3375</td><td>1.32921</td><td>1.32186</td><td></td><td></td><td>83 pips from D1 zone top. Sideways. Monitor.</td></tr><tr><td>2026-07-13</td><td>07:03</td><td>GBPJPY</td><td>WATCHING</td><td>216.736</td><td>215.529</td><td>214.699</td><td></td><td></td><td>121 pips from D1 zone top. Drifting lower. Monitor.</td></tr><tr><td>2026-07-13</td><td>07:03</td><td>GER40</td><td>WATCHING</td><td>25116.7</td><td>25721.6</td><td>25942</td><td></td><td></td><td>Market not yet open (Friday close). D1 SUPPLY proximal 605 pts away. BEARISH watch.</td></tr><tr><td>2026-07-13</td><td>07:03</td><td>XAUUSD</td><td>WATCHING</td><td>4073.61</td><td>4236.65</td><td>4363.54</td><td></td><td></td><td>WATCH only. 4H SB INVALID (Breaker Block). D1 supply 163 pts away. No trigger.</td></tr><tr><td>2026-07-13</td><td>07:03</td><td>NAS100</td><td>WATCHING</td><td>29671.5</td><td>29324.4</td><td>28678.1</td><td></td><td></td><td>WATCH only. Zone tested last week (V-reversal, no 4H base). Needs consolidation on next approach.</td></tr></tbody>
-</table>
-</div>
-</section>
-<!-- ── Trade Log ── -->
-<section class="section" id="tl">
-<div class="section-header">
-<span class="section-title">Trade Log</span>
-</div>
-<div class="table-wrap">
-<table id="trade-log">
-<thead>
-<tr>
-<th class="sortable">Date</th>
-<th class="sortable">Instrument</th>
-<th class="sortable">Direction</th>
-<th class="sortable">Entry</th>
-<th class="sortable">SL</th>
-<th class="sortable">TP1</th>
-<th class="sortable">TP2</th>
-<th class="sortable">Grade</th>
-<th class="sortable">Risk</th>
-<th class="sortable">Setup</th>
-<th class="sortable">Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr><td>2026-07-06</td><td>USDJPY</td><td>SHORT</td><td>162.400</td><td>162.812</td><td>157.000</td><td>—</td><td>—</td><td>$250 · 0.98L</td><td>Sell Limit</td><td>41.2p SL · 13.1R · OPEN</td></tr>
-<tr><td>2026-07-10</td><td>USDJPY</td><td>BUY</td><td>161.77</td><td>161.49</td><td>162.10</td><td>162.50</td><td>A+</td><td>1%</td><td>Type 1 CHoCH</td><td>CHoCH 161.754 confirmed. SL below 1H swing low 161.539. TP1 prior swing high. TP2 prior consolidation zone. VERIFY MT5 Tick Value != 0.00 before placing.</td></tr></tbody>
 </table>
 </div>
 </section>
@@ -553,11 +524,6 @@ td.dim   { color: var(--text-3); }
     ['WEAK', 'row-warn'], ['MODERATE', 'row-warn'], ['MOD', 'row-warn'],
   ];
 
-  const dirMap = [
-    ['LONG', 'row-bull'], ['BUY', 'row-bull'],
-    ['SHORT', 'row-bear'], ['SELL', 'row-bear'],
-  ];
-
   const statusMap = [
     ['TRIGGERED', 'row-bull'],
     ['ACTIVE', 'row-bull'],
@@ -573,7 +539,6 @@ td.dim   { color: var(--text-3); }
   ];
 
   const wbCount = tintRows('weekly-bias',    2,  biasMap);
-  const tlCount = tintRows('trade-log',      2,  dirMap);
   const dcCount = tintRows('daily-checkin',  3,  statusMap);
   const ctCount = tintRows('closed-trades',  13, resultMap);
 
@@ -582,7 +547,6 @@ td.dim   { color: var(--text-3); }
     document.getElementById(id).textContent = n ? n : '';
   }
   setCount('tc-wb', wbCount);
-  setCount('tc-tl', tlCount);
   setCount('tc-dc', dcCount);
   setCount('tc-ct', ctCount);
 
@@ -778,10 +742,9 @@ td.dim   { color: var(--text-3); }
     }
   }
 
-  ['weekly-bias', 'trade-log', 'daily-checkin', 'closed-trades'].forEach(initTable);
+  ['weekly-bias', 'daily-checkin', 'closed-trades'].forEach(initTable);
 
   maybeEmpty('weekly-bias',   'wb', 'Weekly Bias');
-  maybeEmpty('trade-log',     'tl', 'Trade Log');
   maybeEmpty('daily-checkin', 'dc', 'Daily Checkin');
   maybeEmpty('closed-trades', 'ct', 'Closed Trades');
 
