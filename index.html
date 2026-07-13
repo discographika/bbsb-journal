@@ -273,6 +273,29 @@ tbody td {
 td.muted { color: var(--text-2); }
 td.dim   { color: var(--text-3); }
 
+/* ── Notes: collapsed to 2 lines by default, "more/less" expands ── */
+.notes-content {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.notes-wrap.expanded .notes-content {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+.notes-toggle {
+  display: none;
+  margin-top: 3px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  cursor: pointer;
+  user-select: none;
+}
+.notes-toggle:hover { text-decoration: underline; }
+
 /* ── Chips ── */
 .chip {
   display: inline-block;
@@ -698,6 +721,46 @@ td.dim   { color: var(--text-3); }
     return performSort;
   }
 
+  // Notes column: collapse to 2 lines by default, "more/less" expands only that row's cell
+  function makeNotesCollapsible(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const headers = Array.from(table.querySelectorAll('thead th'));
+    const notesIndex = headers.findIndex(th => th.textContent.trim().toLowerCase() === 'notes');
+    if (notesIndex === -1) return;
+
+    table.querySelectorAll('tbody tr').forEach(row => {
+      const cell = row.children[notesIndex];
+      if (!cell || cell.querySelector('.notes-wrap')) return;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'notes-wrap';
+      const content = document.createElement('div');
+      content.className = 'notes-content';
+      content.innerHTML = cell.innerHTML;
+      const toggle = document.createElement('span');
+      toggle.className = 'notes-toggle';
+      toggle.textContent = 'more ▾';
+
+      cell.innerHTML = '';
+      wrap.appendChild(content);
+      wrap.appendChild(toggle);
+      cell.appendChild(wrap);
+
+      toggle.addEventListener('click', () => {
+        const expanded = wrap.classList.toggle('expanded');
+        toggle.textContent = expanded ? 'less ▲' : 'more ▾';
+      });
+
+      // Only show the toggle where the clamp actually truncates something
+      requestAnimationFrame(() => {
+        if (content.scrollHeight > content.clientHeight + 1) {
+          toggle.style.display = 'inline-block';
+        }
+      });
+    });
+  }
+
   // Restore saved column order first, then wire up drag/sort, then replay any saved sort —
   // in that sequence so the restored order doesn't fight the live drag/sort handlers.
   function initTable(tableId) {
@@ -705,6 +768,7 @@ td.dim   { color: var(--text-3); }
     if (!table) return;
     const state = loadTableState(tableId);
     if (state.order) applyColumnOrder(table, state.order);
+    makeNotesCollapsible(tableId);
     makeColumnsDraggable(tableId);
     const performSort = makeSortable(tableId);
     if (state.sort && performSort) {
