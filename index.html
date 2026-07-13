@@ -92,6 +92,7 @@ html, body {
   display: flex;
   gap: 28px;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .stat {
@@ -124,6 +125,7 @@ html, body {
 
 .header-right {
   margin-left: auto;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -335,6 +337,84 @@ td.dim   { color: var(--text-3); }
   font-size: 9.5px;
   color: var(--text-3);
   letter-spacing: 0.04em;
+}
+
+/* ── Responsive / mobile ── */
+@media (max-width: 760px) {
+  .header {
+    gap: 12px;
+    padding: 9px 14px;
+  }
+  .brand-badge, .header-divider { display: none; }
+  .stats-strip {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 18px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .stats-strip::-webkit-scrollbar { display: none; }
+  .stat { flex-shrink: 0; }
+
+  .nav {
+    padding: 0 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 9px 12px 8px;
+    font-size: 11.5px;
+  }
+
+  .section { padding: 12px; }
+  .section-header { flex-wrap: wrap; gap: 4px 12px; }
+
+  .footer { flex-direction: column; gap: 4px; }
+
+  /* Tables collapse into stacked label/value cards — a 20+ column grid
+     can't read on a phone screen no matter how narrow the columns get. */
+  .table-wrap { border: none; overflow-x: visible; }
+
+  table { table-layout: auto; }
+
+  thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+  tbody tr:nth-child(odd),
+  tbody tr:nth-child(even) { background: var(--surface); }
+  tbody tr:last-child { margin-bottom: 0; }
+
+  tbody td {
+    display: block;
+    padding: 5px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  tbody td:last-child { border-bottom: none; }
+  tbody td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 2px;
+  }
 }
 </style>
 </head>
@@ -725,6 +805,21 @@ td.dim   { color: var(--text-3); }
     });
   }
 
+  // Tags every td with its column's header text as data-label, so the mobile
+  // breakpoint can render each row as a label/value card instead of a 20-column grid.
+  // Cells travel with their data-label when a column is dragged, so the card order
+  // stays correct even after a live reorder.
+  function assignDataLabels(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const labels = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+    table.querySelectorAll('tbody tr').forEach(row => {
+      Array.from(row.children).forEach((cell, i) => {
+        if (labels[i]) cell.setAttribute('data-label', labels[i]);
+      });
+    });
+  }
+
   // Restore saved column order first, then wire up drag/sort, then replay any saved sort —
   // in that sequence so the restored order doesn't fight the live drag/sort handlers.
   function initTable(tableId) {
@@ -732,6 +827,7 @@ td.dim   { color: var(--text-3); }
     if (!table) return;
     const state = loadTableState(tableId);
     if (state.order) applyColumnOrder(table, state.order);
+    assignDataLabels(tableId);
     makeNotesCollapsible(tableId);
     makeColumnsDraggable(tableId);
     const performSort = makeSortable(tableId);
