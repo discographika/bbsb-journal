@@ -339,8 +339,57 @@ td.dim   { color: var(--text-3); }
   letter-spacing: 0.04em;
 }
 
+/* ── Filter bar (mobile-only — desktop already sorts via clickable headers) ── */
+.filter-bar {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.filter-group { display: flex; flex-direction: column; gap: 5px; }
+.filter-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+.filter-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.filter-chips::-webkit-scrollbar { display: none; }
+.filter-chip {
+  flex-shrink: 0;
+  padding: 5px 11px;
+  font-size: 11px;
+  font-family: var(--font-ui);
+  color: var(--text-2);
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+.filter-chip.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
 /* ── Responsive / mobile ── */
 @media (max-width: 760px) {
+  .filter-bar { display: flex; }
+
   .header {
     gap: 12px;
     padding: 9px 14px;
@@ -464,6 +513,20 @@ td.dim   { color: var(--text-3); }
 <div class="section-header">
 <span class="section-title">Weekly Bias</span>
 <span class="section-sub">EURUSD · XAUUSD · GBPUSD · GBPJPY · EURJPY · USDJPY · AUDUSD · NZDUSD · USDCAD · US30 · NAS100 · US500 · GER40</span>
+</div>
+<div class="filter-bar" id="wb-filter-bar">
+<div class="filter-group" data-filter-col="Trade_Y_N">
+<span class="filter-label">Tradeable</span>
+<div class="filter-chips"></div>
+</div>
+<div class="filter-group" data-filter-col="Min_Grade">
+<span class="filter-label">Grade</span>
+<div class="filter-chips"></div>
+</div>
+<div class="filter-group" data-filter-col="Macro_Status">
+<span class="filter-label">Strength</span>
+<div class="filter-chips"></div>
+</div>
 </div>
 <div class="table-wrap">
 <table id="weekly-bias">
@@ -839,6 +902,90 @@ td.dim   { color: var(--text-3); }
   }
 
   ['weekly-bias', 'daily-checkin', 'closed-trades'].forEach(initTable);
+
+  // Mobile filter bar (Weekly Bias only): chip groups for Tradeable/Grade/Strength.
+  // Grade values are messy free text ("A+ only 0.5%", "A/A+ 1%"...), so that group
+  // buckets by its leading grade tier; Tradeable and Strength filter on the raw value.
+  function bucketGrade(raw) {
+    const v = raw.toUpperCase();
+    // N/A and WEAK must be checked before the bare 'A' pattern — both contain the letter A.
+    const buckets = ['A+', 'B+', 'N/A', 'WEAK', 'A'];
+    for (const b of buckets) if (v.includes(b)) return b;
+    return raw.trim() || '—';
+  }
+
+  function initFilterBar(tableId, barId, groups) {
+    const table = document.getElementById(tableId);
+    const bar = document.getElementById(barId);
+    if (!table || !bar) return;
+
+    function colIndex(col) {
+      return Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim()).indexOf(col);
+    }
+
+    function rows() { return Array.from(table.querySelectorAll('tbody tr')); }
+
+    const state = {}; // col -> selected bucket/value, or null for "All"
+
+    function applyFilters() {
+      rows().forEach(row => {
+        const visible = groups.every(g => {
+          const sel = state[g.col];
+          if (!sel) return true;
+          const idx = colIndex(g.col);
+          const cell = row.children[idx];
+          const raw = cell ? cell.textContent.trim() : '';
+          const val = g.bucket ? bucketGrade(raw) : raw;
+          return val === sel;
+        });
+        row.style.display = visible ? '' : 'none';
+      });
+    }
+
+    groups.forEach(g => {
+      const groupEl = bar.querySelector('.filter-group[data-filter-col="' + g.col + '"]');
+      const chipsEl = groupEl && groupEl.querySelector('.filter-chips');
+      const idx = colIndex(g.col);
+      if (!chipsEl || idx === -1) return;
+
+      const values = new Set();
+      rows().forEach(row => {
+        const cell = row.children[idx];
+        if (!cell) return;
+        const raw = cell.textContent.trim();
+        values.add(g.bucket ? bucketGrade(raw) : raw);
+      });
+
+      function selectChip(chip, val) {
+        chipsEl.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        state[g.col] = val;
+        applyFilters();
+      }
+
+      const allChip = document.createElement('button');
+      allChip.type = 'button';
+      allChip.className = 'filter-chip active';
+      allChip.textContent = 'All';
+      allChip.addEventListener('click', () => selectChip(allChip, null));
+      chipsEl.appendChild(allChip);
+
+      Array.from(values).sort().forEach(val => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'filter-chip';
+        chip.textContent = val;
+        chip.addEventListener('click', () => selectChip(chip, val));
+        chipsEl.appendChild(chip);
+      });
+    });
+  }
+
+  initFilterBar('weekly-bias', 'wb-filter-bar', [
+    { col: 'Trade_Y_N' },
+    { col: 'Min_Grade', bucket: true },
+    { col: 'Macro_Status' },
+  ]);
 
   maybeEmpty('weekly-bias',   'wb', 'Weekly Bias');
   maybeEmpty('daily-checkin', 'dc', 'Daily Checkin');
