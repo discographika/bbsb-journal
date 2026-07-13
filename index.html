@@ -237,6 +237,12 @@ thead th {
   border-bottom: 1px solid var(--border);
 }
 
+thead th.sortable { cursor: pointer; user-select: none; }
+thead th.sortable:hover { color: var(--text-2); }
+thead th.sortable::after { content: ''; display: inline-block; width: 8px; margin-left: 4px; opacity: 0.35; }
+thead th.sortable.sort-asc::after  { content: '▲'; opacity: 1; color: var(--accent); }
+thead th.sortable.sort-desc::after { content: '▼'; opacity: 1; color: var(--accent); }
+
 tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
 tbody tr:last-child { border-bottom: none; }
 
@@ -371,8 +377,8 @@ td.dim   { color: var(--text-3); }
 <th>H4_OB</th>
 <th>H4_POC</th>
 <th>Sweep_Watch</th>
-<th>Trade_Y_N</th>
-<th>Min_Grade</th>
+<th class="sortable">Trade_Y_N</th>
+<th class="sortable">Min_Grade</th>
 <th>Notes</th>
 </tr>
 </thead>
@@ -562,6 +568,32 @@ td.dim   { color: var(--text-3); }
       wrap.appendChild(d);
     }
   }
+  // Column sorting: click a th.sortable to sort its table by that column, toggling asc/desc
+  function makeSortable(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const tbody = table.querySelector('tbody');
+    const headers = table.querySelectorAll('thead th.sortable');
+    headers.forEach(th => {
+      th.addEventListener('click', () => {
+        const colIndex = th.cellIndex;
+        const asc = !th.classList.contains('sort-asc');
+        headers.forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+        th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.sort((a, b) => {
+          const av = (a.children[colIndex] && a.children[colIndex].textContent.trim()) || '';
+          const bv = (b.children[colIndex] && b.children[colIndex].textContent.trim()) || '';
+          return asc
+            ? av.localeCompare(bv, undefined, { numeric: true, sensitivity: 'base' })
+            : bv.localeCompare(av, undefined, { numeric: true, sensitivity: 'base' });
+        });
+        rows.forEach(r => tbody.appendChild(r));
+      });
+    });
+  }
+  makeSortable('weekly-bias');
+
   maybeEmpty('weekly-bias',   'wb', 'Weekly Bias');
   maybeEmpty('trade-log',     'tl', 'Trade Log');
   maybeEmpty('daily-checkin', 'dc', 'Daily Checkin');
