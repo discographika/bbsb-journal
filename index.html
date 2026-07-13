@@ -364,27 +364,27 @@ td.dim   { color: var(--text-3); }
 <table id="weekly-bias">
 <thead>
 <tr>
-<th>Date</th>
-<th>Instrument</th>
-<th>W_Bias</th>
-<th>Valuation</th>
-<th>Seasonal</th>
-<th>COT_Index_Value</th>
-<th>COT_Verdict</th>
-<th>Macro_Status</th>
-<th>D1_Zone_Type</th>
-<th>D1_Zone_Top</th>
-<th>D1_Zone_Bot</th>
-<th>D1_POC</th>
-<th>H4_Zone_Type</th>
-<th>H4_Zone_Top</th>
-<th>H4_Zone_Bot</th>
-<th>H4_OB</th>
-<th>H4_POC</th>
-<th>Sweep_Watch</th>
+<th class="sortable">Date</th>
+<th class="sortable">Instrument</th>
+<th class="sortable">W_Bias</th>
+<th class="sortable">Valuation</th>
+<th class="sortable">Seasonal</th>
+<th class="sortable">COT_Index_Value</th>
+<th class="sortable">COT_Verdict</th>
+<th class="sortable">Macro_Status</th>
+<th class="sortable">D1_Zone_Type</th>
+<th class="sortable">D1_Zone_Top</th>
+<th class="sortable">D1_Zone_Bot</th>
+<th class="sortable">D1_POC</th>
+<th class="sortable">H4_Zone_Type</th>
+<th class="sortable">H4_Zone_Top</th>
+<th class="sortable">H4_Zone_Bot</th>
+<th class="sortable">H4_OB</th>
+<th class="sortable">H4_POC</th>
+<th class="sortable">Sweep_Watch</th>
 <th class="sortable">Trade_Y_N</th>
 <th class="sortable">Min_Grade</th>
-<th>Notes</th>
+<th class="sortable">Notes</th>
 </tr>
 </thead>
 <tbody><tr><td>2026-07-12</td><td>EURUSD</td><td>BEARISH</td><td>NEUTRAL</td><td>NEUTRAL (+0.16%)</td><td>100.00%</td><td>FULL-OPP</td><td>SKIP</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>NO</td><td>NO</td><td>N/A</td><td>COT VETO: Comm 100% buying extreme (bullish EUR) opposes confirmed bearish weekly ChoCh (4099.02 area equiv / 1.16-1.14 break).</td></tr><tr><td>2026-07-12</td><td>XAUUSD</td><td>BEARISH</td><td>NEUTRAL</td><td>UNAVAILABLE</td><td>67.20%</td><td>NONE</td><td>WEAK</td><td>SUPPLY</td><td>4363.54</td><td>4236.65</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>4351.48-4324.32 BROKEN</td><td>N/A</td><td>N/A</td><td>WATCH</td><td>A+ 0.5%</td><td>D1 fresh (wicked once, never closed through). 4H SB is a Breaker Block (price closed 4379.84 &gt; OB high 4351.48) — INVALID, no clean trigger. Seasonality indicator implausible (2382 vs 4119).</td></tr><tr><td>2026-07-12</td><td>GBPUSD</td><td>BULLISH</td><td>NEUTRAL</td><td>OPPOSING (-0.42%)</td><td>78.75%</td><td>STRONG</td><td>WEAK</td><td>DEMAND</td><td>1.32921</td><td>1.32186</td><td>N/A</td><td>DEMAND</td><td>1.32568</td><td>1.32334</td><td>1.32334-1.32568 CLEAR</td><td>N/A</td><td>YES</td><td>YES</td><td>A+ only 0.5%</td><td>Weekly structure still HH/HL (LH warning, no ChoCh). Near-full COT divergence bullish, but seasonality opposes -&gt; downgraded to WEAK. Sweep watch: minor liquidity 1.3229-1.3232.</td></tr><tr><td>2026-07-12</td><td>GBPJPY</td><td>BULLISH</td><td>NEUTRAL</td><td>UNAVAILABLE</td><td>78.75%(GBP)/82.96%(JPY)</td><td>CONFLICT</td><td>WEAK</td><td>DEMAND</td><td>215.529</td><td>214.699</td><td>N/A</td><td>DEMAND</td><td>215.529</td><td>215.371</td><td>215.371-215.529 CLEAR</td><td>N/A</td><td>YES</td><td>YES</td><td>A+ only 0.5%</td><td>Clean bullish trend, no ChoCh. GBP-COT bullish GBPJPY vs JPY-COT bullish-JPY (bearish GBPJPY) -- legs conflict, no net COT edge. Correlated with EURJPY via JPY leg.</td></tr><tr><td>2026-07-12</td><td>EURJPY</td><td>BULLISH</td><td>NEUTRAL</td><td>UNAVAILABLE</td><td>100.00%(EUR)/82.96%(JPY)</td><td>CONFLICT</td><td>WEAK</td><td>DEMAND</td><td>184.601</td><td>183.925</td><td>N/A</td><td>DEMAND</td><td>184.599</td><td>184.485</td><td>184.035-184.439 CLEAR</td><td>N/A</td><td>YES (ACTIVE)</td><td>YES</td><td>A+ only 0.5%</td><td>Retracing from HH toward HL 182.04. D1 zone under live test at proximal. 4H zone showing an ACTIVE sweep+reclaim as of last bar -- watch for confirmation. EUR-COT vs JPY-COT legs conflict. Correlated with GBPJPY via JPY leg.</td></tr><tr><td>2026-07-12</td><td>USDJPY</td><td>BULLISH</td><td>NEUTRAL</td><td>UNAVAILABLE</td><td>82.96% (6J1!, INVERTED)</td><td>FULL-OPP</td><td>SKIP</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>NO</td><td>NO</td><td>N/A</td><td>COT VETO (inverted rule): 6J1! Commercial 82.96% buying-JPY extreme = bearish USDJPY signal, opposes confirmed bullish weekly structure at fresh highs.</td></tr><tr><td>2026-07-12</td><td>AUDUSD</td><td>BULLISH</td><td>NEUTRAL</td><td>UNAVAILABLE</td><td>100.00%</td><td>FULL</td><td>MODERATE</td><td>DEMAND</td><td>0.69043</td><td>0.68772</td><td>N/A</td><td>DEMAND</td><td>0.68901</td><td>0.68802</td><td>0.68650-0.68835 CLEAR</td><td>N/A</td><td>NO</td><td>YES</td><td>A+ only 1%</td><td>Last confirmed HH 0.73, unconfirmed pullback toward HL 0.68 (no new pivot stamped). Near-perfect full COT divergence aligned bullish. 4H SB zone heavily retested (5-6 taps, thin buffer above midpoint) -- reduced conviction, A+ only. DXY-inverse pick alongside GBPUSD (2/2 cap).</td></tr><tr><td>2026-07-12</td><td>NZDUSD</td><td>BEARISH</td><td>NEUTRAL</td><td>UNAVAILABLE</td><td>120.00%</td><td>FULL-OPP</td><td>SKIP</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>NO</td><td>NO</td><td>N/A</td><td>COT VETO: textbook full divergence, every condition met (Comm 120% extreme, NonComm -20%, retail short too). Opposes confirmed bearish weekly ChoCh+bos. Cleanest SKIP signal of the session.</td></tr><tr><td>2026-07-12</td><td>USDCAD</td><td>BULLISH</td><td>NEUTRAL</td><td>UNAVAILABLE</td><td>100.00% (6C1!, INVERTED)</td><td>FULL-OPP</td><td>SKIP</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>NO</td><td>NO</td><td>N/A</td><td>COT VETO (inverted rule): 6C1! Commercial 100% buying-CAD extreme = bearish USDCAD, opposes confirmed bullish weekly structure. Also carries BOC rate decision risk flag Wed Jul 15.</td></tr><tr><td>2026-07-12</td><td>US30</td><td>BULLISH</td><td>NEUTRAL</td><td>OPPOSING (-8.08%)</td><td>12.71% (YM1!)</td><td>FULL-OPP-MIRROR</td><td>SKIP</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>NO</td><td>NO</td><td>N/A</td><td>Confirmed bullish structure at fresh highs, but Seasonality (-8.08%) and COT (mirror full divergence: Comm 12.71% selling extreme vs NonComm 97.28% buying extreme) both oppose the trend.</td></tr><tr><td>2026-07-12</td><td>NAS100</td><td>BULLISH</td><td>NEUTRAL</td><td>OPPOSING (-8.48%)</td><td>56.40% (NQ1!)</td><td>NONE</td><td>WEAK</td><td>DEMAND</td><td>29324.4</td><td>28678.1</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A (already swept)</td><td>N/A</td><td>N/A</td><td>WATCH</td><td>A+ 0.5%</td><td>ChoCh 26223.8 confirmed bullish, HH 30776, pulling back. D1 demand fresh. Price already swept the distal in a sharp V-reversal this week with no tidy 4H base -- no clean trigger, needs fresh consolidation on next approach.</td></tr><tr><td>2026-07-12</td><td>US500</td><td>BULLISH</td><td>NEUTRAL</td><td>OPPOSING (-0.70%)</td><td>10.75% (ES1!)</td><td>FULL-OPP-MIRROR</td><td>SKIP</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>NO</td><td>NO</td><td>N/A</td><td>Same mirror-COT pattern as US30 (Comm 10.75% selling extreme vs NonComm 95.98% buying extreme). Mild seasonality opposition too. Pepperstone symbol is US500, not SPX500.</td></tr><tr><td>2026-07-12</td><td>GER40</td><td>BEARISH</td><td>NEUTRAL</td><td>ALIGNED (-7.18%)</td><td>UNAVAILABLE (no CFTC data)</td><td>N/A</td><td>MODERATE</td><td>SUPPLY</td><td>25942</td><td>25721.6</td><td>N/A</td><td>SUPPLY</td><td>25837.7</td><td>25731.1</td><td>25731.1-25837.7 CLEAR</td><td>N/A</td><td>YES</td><td>YES</td><td>A/A+ 1%</td><td>Confirmed bearish ChoCh 25396.1. Only instrument this week where seasonality ALIGNS with weekly bias. GER40 is a Eurex product -- no CFTC COT data available. Standalone, no correlation overlap with FX/US-index buckets.</td></tr></tbody>
@@ -400,17 +400,17 @@ td.dim   { color: var(--text-3); }
 <table id="trade-log">
 <thead>
 <tr>
-<th>Date</th>
-<th>Instrument</th>
-<th>Direction</th>
-<th>Entry</th>
-<th>SL</th>
-<th>TP1</th>
-<th>TP2</th>
-<th>Grade</th>
-<th>Risk</th>
-<th>Setup</th>
-<th>Notes</th>
+<th class="sortable">Date</th>
+<th class="sortable">Instrument</th>
+<th class="sortable">Direction</th>
+<th class="sortable">Entry</th>
+<th class="sortable">SL</th>
+<th class="sortable">TP1</th>
+<th class="sortable">TP2</th>
+<th class="sortable">Grade</th>
+<th class="sortable">Risk</th>
+<th class="sortable">Setup</th>
+<th class="sortable">Notes</th>
 </tr>
 </thead>
 <tbody>
@@ -428,16 +428,16 @@ td.dim   { color: var(--text-3); }
 <table id="daily-checkin">
 <thead>
 <tr>
-<th>Date</th>
-<th>Time</th>
-<th>Instrument</th>
-<th>Status</th>
-<th>Price</th>
-<th>Zone_Top</th>
-<th>Zone_Bot</th>
-<th>CHoCH</th>
-<th>Pattern</th>
-<th>Notes</th>
+<th class="sortable">Date</th>
+<th class="sortable">Time</th>
+<th class="sortable">Instrument</th>
+<th class="sortable">Status</th>
+<th class="sortable">Price</th>
+<th class="sortable">Zone_Top</th>
+<th class="sortable">Zone_Bot</th>
+<th class="sortable">CHoCH</th>
+<th class="sortable">Pattern</th>
+<th class="sortable">Notes</th>
 </tr>
 </thead>
 <tbody>
@@ -455,21 +455,21 @@ td.dim   { color: var(--text-3); }
 <table id="closed-trades">
 <thead>
 <tr>
-<th>Date_Open</th>
-<th>Date_Close</th>
-<th>Instrument</th>
-<th>Direction</th>
-<th>Entry</th>
-<th>Exit</th>
-<th>SL</th>
-<th>Exit_Reason</th>
-<th>Lots</th>
-<th>Gross_$</th>
-<th>Comm_Swap</th>
-<th>Net_$</th>
-<th>R</th>
-<th>Result</th>
-<th>Notes</th>
+<th class="sortable">Date_Open</th>
+<th class="sortable">Date_Close</th>
+<th class="sortable">Instrument</th>
+<th class="sortable">Direction</th>
+<th class="sortable">Entry</th>
+<th class="sortable">Exit</th>
+<th class="sortable">SL</th>
+<th class="sortable">Exit_Reason</th>
+<th class="sortable">Lots</th>
+<th class="sortable">Gross_$</th>
+<th class="sortable">Comm_Swap</th>
+<th class="sortable">Net_$</th>
+<th class="sortable">R</th>
+<th class="sortable">Result</th>
+<th class="sortable">Notes</th>
 </tr>
 </thead>
 <tbody>
@@ -654,6 +654,9 @@ td.dim   { color: var(--text-3); }
     });
   }
   makeSortable('weekly-bias');
+  makeSortable('trade-log');
+  makeSortable('daily-checkin');
+  makeSortable('closed-trades');
 
   maybeEmpty('weekly-bias',   'wb', 'Weekly Bias');
   maybeEmpty('trade-log',     'tl', 'Trade Log');
