@@ -219,6 +219,7 @@ html, body {
 
 table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-family: var(--font-mono);
   font-size: 11.5px;
@@ -226,14 +227,15 @@ table {
 
 thead th {
   background: var(--surface-2);
-  padding: 8px 12px;
+  padding: 8px 8px;
   text-align: left;
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-3);
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
   border-bottom: 1px solid var(--border);
 }
 
@@ -260,9 +262,10 @@ tbody tr.row-warn        { background: var(--warn-dim) !important; }
 tbody tr:hover           { background: var(--surface-2) !important; }
 
 tbody td {
-  padding: 7px 12px;
-  vertical-align: middle;
-  white-space: nowrap;
+  padding: 7px 8px;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
   color: var(--text-1);
   font-variant-numeric: tabular-nums;
 }
