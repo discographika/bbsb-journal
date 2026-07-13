@@ -243,6 +243,11 @@ thead th.sortable::after { content: ''; display: inline-block; width: 8px; margi
 thead th.sortable.sort-asc::after  { content: '▲'; opacity: 1; color: var(--accent); }
 thead th.sortable.sort-desc::after { content: '▼'; opacity: 1; color: var(--accent); }
 
+thead th[draggable="true"] { cursor: grab; }
+thead th[draggable="true"]:active { cursor: grabbing; }
+thead th.col-dragging { opacity: 0.35; }
+thead th.col-drag-over { box-shadow: inset 2px 0 0 var(--accent), inset -2px 0 0 var(--accent); background: var(--accent-dim); }
+
 tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
 tbody tr:last-child { border-bottom: none; }
 
@@ -568,6 +573,62 @@ td.dim   { color: var(--text-3); }
       wrap.appendChild(d);
     }
   }
+  // Column reordering: drag a th left/right to move its whole column, header + all rows
+  function makeColumnsDraggable(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const headerRow = table.querySelector('thead tr');
+    if (!headerRow) return;
+
+    function moveColumn(row, fromIndex, toIndex) {
+      const cell = row.children[fromIndex];
+      if (!cell) return;
+      row.removeChild(cell);
+      const ref = row.children[toIndex] || null;
+      row.insertBefore(cell, ref);
+    }
+
+    let dragSrcIndex = null;
+
+    Array.from(headerRow.children).forEach(th => {
+      th.draggable = true;
+
+      th.addEventListener('dragstart', e => {
+        dragSrcIndex = th.cellIndex;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', String(dragSrcIndex));
+        th.classList.add('col-dragging');
+      });
+
+      th.addEventListener('dragend', () => {
+        th.classList.remove('col-dragging');
+        headerRow.querySelectorAll('th.col-drag-over').forEach(el => el.classList.remove('col-drag-over'));
+        dragSrcIndex = null;
+      });
+
+      th.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        th.classList.add('col-drag-over');
+      });
+
+      th.addEventListener('dragleave', () => th.classList.remove('col-drag-over'));
+
+      th.addEventListener('drop', e => {
+        e.preventDefault();
+        th.classList.remove('col-drag-over');
+        const toIndex = th.cellIndex;
+        if (dragSrcIndex === null || dragSrcIndex === toIndex) return;
+        table.querySelectorAll('tr').forEach(row => moveColumn(row, dragSrcIndex, toIndex));
+        dragSrcIndex = null;
+      });
+    });
+  }
+  makeColumnsDraggable('weekly-bias');
+  makeColumnsDraggable('trade-log');
+  makeColumnsDraggable('daily-checkin');
+  makeColumnsDraggable('closed-trades');
+
   // Column sorting: click a th.sortable to sort its table by that column, toggling asc/desc
   function makeSortable(tableId) {
     const table = document.getElementById(tableId);
