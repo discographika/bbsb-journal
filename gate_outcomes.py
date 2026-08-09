@@ -15,11 +15,18 @@ WHAT THIS CAN AND CANNOT ANSWER  -- read before trusting a summary
     CAN:  does ZONE SCORE predict outcome?  (8/8 vs 7/8 vs 6/8)
           does the forward move favour the recorded W_Bias?
 
-    CANNOT (yet): whether SKIP was the right call. Every SKIP row has NO ZONE,
-          because /sd-sunday Step 3G short-circuits the zone search for gated
-          instruments to save tokens. That optimisation destroys the
-          counterfactual: there is nothing to measure on a skipped setup.
-          To answer it, Step 3G must record zones for gated instruments too.
+    CANNOT (for rows dated before 2026-08-09): whether SKIP was the right call.
+          Step 3G used to short-circuit the whole zone search for gated
+          instruments to save tokens, so every SKIP row from that era has NO
+          ZONE. That optimisation destroyed the counterfactual -- there is
+          nothing to measure on those skipped setups, and no way to backfill
+          them, since the zone had to be read off the chart at the time.
+
+          FIXED 2026-08-09: Step 3G now runs the BB search on gated instruments
+          and records it (SB is still skipped; Trade_Y_N still forces NO). So
+          SKIP rows dated 2026-08-09 onward ARE measurable. The
+          gated-vs-flagged comparison becomes real once ~20 of them accumulate
+          -- roughly 5 Sundays at ~4 gated instruments per card.
 
     Also: the gate has only ever emitted SKIP or WEAK. MODERATE/HIGH/A+ MAX have
           never fired (see the NEUTRAL-bottleneck note in CLAUDE.md), so there is
@@ -109,7 +116,12 @@ def evaluate(row, days):
            "macro": row.get("Macro_Status"), "bb_score": row.get("BB_Score"),
            "sb_score": row.get("SB_Score"), "trade": row.get("Trade_Y_N"),
            "bias": row.get("W_Bias", "")[:24], "status": "", "fwd_5d": None,
-           "reached": None, "r_mult": None}
+           "reached": None, "r_mult": None, "has_zone": False}
+    # Set from the row itself, BEFORE any early return -- coverage reporting must
+    # count rows that are merely too recent to evaluate, not just evaluated ones.
+    res["has_zone"] = bool(
+        num(row.get("BB_Zone_Top")) and num(row.get("BB_Zone_Bot"))
+        and (row.get("BB_Zone_Type") or "").upper() in ("DEMAND", "SUPPLY"))
     if not tk:
         res["status"] = "unknown ticker"
         return res
@@ -137,7 +149,7 @@ def evaluate(row, days):
 
     top, bot = num(row.get("BB_Zone_Top")), num(row.get("BB_Zone_Bot"))
     ztype = (row.get("BB_Zone_Type") or "").upper()
-    if top and bot and ztype in ("DEMAND", "SUPPLY"):
+    if res["has_zone"]:
         demand = ztype == "DEMAND"
         prox, dist = (top, bot) if demand else (bot, top)
         R = abs(prox - dist)
@@ -221,12 +233,41 @@ def main():
             print(f"  {k:6} n={len(v):3}  avg {sum(v)/len(v):+.2f}%  "
                   f"positive {sum(1 for x in v if x > 0)}/{len(v)}")
 
-    print("\n" + "!" * 72)
-    print("CANNOT yet answer 'was SKIP correct'. Every SKIP row has NO ZONE,")
-    print("because /sd-sunday Step 3G skips the zone search for gated setups.")
-    print("That saves tokens and destroys the counterfactual. To answer it,")
-    print("Step 3G must record zones for gated instruments too.")
-    print("!" * 72)
+    # --- THE ACTUAL QUESTION: was SKIP the right call? ------------------------
+    # Only answerable on rows where a gated setup ALSO has a recorded zone, so
+    # its r_mult can be compared against the setups the gate let through.
+    # Step 3G recorded no zone for gated rows before 2026-08-09 (see module
+    # docstring) -- those are permanently unanswerable, hence the coverage line.
+    print("\n=== WAS SKIP THE RIGHT CALL? ===")
+    skips = [r for r in results if (r["macro"] or "").upper().startswith("SKIP")]
+    blind = [r for r in skips if not r["has_zone"]]
+    print(f"  SKIP rows: {len(skips)}   with a zone (measurable): "
+          f"{len(skips) - len(blind)}   without (blind): {len(blind)}")
+    if blind:
+        print(f"  {len(blind)} blind row(s) are pre-2026-08-09 and cannot be")
+        print("  backfilled -- the zone had to be read off the chart at the time.")
+
+    cmp_ = {}
+    for r in done:
+        if r["r_mult"] is None:
+            continue
+        key = "GATED (skipped)" if (r["macro"] or "").upper().startswith("SKIP") \
+            else "LET THROUGH"
+        cmp_.setdefault(key, []).append(r["r_mult"])
+    if len(cmp_) == 2:
+        for k in ("LET THROUGH", "GATED (skipped)"):
+            v = cmp_[k]
+            print(f"  {k:16} n={len(v):3}  avg R {sum(v)/len(v):+.2f}")
+        gap = (sum(cmp_["LET THROUGH"]) / len(cmp_["LET THROUGH"])
+               - sum(cmp_["GATED (skipped)"]) / len(cmp_["GATED (skipped)"]))
+        n = min(len(cmp_["LET THROUGH"]), len(cmp_["GATED (skipped)"]))
+        print(f"  gap: {gap:+.2f} R in favour of the gate"
+              if gap > 0 else f"  gap: {gap:+.2f} R -- the gate skipped the BETTER setups")
+        if n < 20:
+            print(f"  NOT YET DECISIVE -- smaller arm has n={n}, want ~20.")
+    else:
+        print("  Not comparable yet: need evaluable rows on BOTH sides")
+        print("  (gated-with-zone AND let-through). Re-run weekly.")
 
     if args.csv:
         with open(args.csv, "w", encoding="utf-8", newline="") as f:
