@@ -147,13 +147,43 @@ def main():
     print(f"journal : {len(jrows)} rows    net ${jrn_pnl:,.2f}")
     print(f"delta   : ${exp_pnl - jrn_pnl:,.2f}\n")
 
+    # Reverse direction. Added 2026-08-09 after this script reported
+    # "OK — journal matches the export exactly" against an EMPTY export while
+    # the journal held 43 rows and the delta read $1,125.53.
+    #
+    # The original check was one-directional: it only asked "is any EXPORT deal
+    # missing from the journal?" An empty export has nothing to be missing, so
+    # it passed. A truncated export (say, only the last month downloaded) passed
+    # the same way, silently leaving every older row unverified.
+    #
+    # That is the exact failure this script exists to prevent — a reconciliation
+    # that reports OK when it has actually checked nothing.
+    export_ids = {d["id"] for d in deals}
+    unmatched_journal = [(t, r) for r in jrows
+                         if (t := ticket_of(r.get("Notes", ""))) and t not in export_ids]
+
+    delta = exp_pnl - jrn_pnl
+
     ok = True
+    if not deals and jrows:
+        ok = False
+        print("!! EXPORT IS EMPTY but the journal has rows — nothing was verified.")
+        print("   Check the export actually pulled data, and that the terminal is")
+        print("   on the right account. Do NOT read this as a clean result.")
     if missing:
         ok = False
         print(f"!! {len(missing)} DEAL(S) MISSING FROM THE JOURNAL")
         for d in missing:
             print(f"     #{d['id']}  {d['close']:16} {d['symbol']:7} {d['side']:4} "
                   f"${d['pnl'] if d['pnl'] is not None else 0:>9,.2f}")
+    if unmatched_journal:
+        ok = False
+        print(f"\n!! {len(unmatched_journal)} JOURNAL ROW(S) NOT IN THE EXPORT — unverified")
+        print("   Either the export range is too short, or these rows are wrong.")
+        for t, r in unmatched_journal[:10]:
+            print(f"     #{t}  {r.get('Date_Close','?')}  {r.get('Instrument','?')}")
+        if len(unmatched_journal) > 10:
+            print(f"     ... and {len(unmatched_journal) - 10} more")
     if orphans:
         ok = False
         print(f"\n!! {len(orphans)} JOURNAL ROW(S) WITH NO TICKET — cannot be verified")
@@ -164,6 +194,9 @@ def main():
         print(f"\n!! {len(mismatch)} P&L MISMATCH(ES)")
         for d, jp in mismatch:
             print(f"     #{d['id']}  journal ${jp:,.2f}  vs export ${d['pnl']:,.2f}")
+    if abs(delta) > 0.01:
+        ok = False
+        print(f"\n!! NET P&L DELTA ${delta:,.2f} — the two sides do not agree.")
     if ok:
         print("OK — journal matches the export exactly.")
 
