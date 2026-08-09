@@ -89,7 +89,8 @@ def num(s):
 def load_rows():
     soup = BeautifulSoup(JOURNAL.read_text(encoding="utf-8"), "html.parser")
     out = []
-    for tid in ("weekly-bias-history", "weekly-bias"):
+    # LIVE CARD FIRST, history second -- order matters, see the dedupe below.
+    for tid in ("weekly-bias", "weekly-bias-history"):
         t = soup.find("table", id=tid)
         if not t:
             continue
@@ -98,7 +99,13 @@ def load_rows():
             cells = [td.get_text(strip=True) for td in tr.find_all("td")]
             if cells:
                 out.append(dict(zip(hdr, cells)))
-    # dedupe on (Date, Instrument) -- the live card duplicates history
+    # Dedupe on (Date, Instrument), FIRST WINS -- so the live card beats history.
+    # In normal operation the two never overlap (history holds past weeks, the
+    # card holds this one). They overlap only when a Sunday is re-run or a row
+    # is corrected: Step 0 archives the OLD card, then rewrites the live one.
+    # History-first would make the stale archived copy win and silently discard
+    # the correction -- which would have quietly defeated the 2026-08-09 Step 3G
+    # fix if the card were re-run to pick up zones on gated rows.
     seen, uniq = set(), []
     for r in out:
         k = (r.get("Date"), r.get("Instrument"))
