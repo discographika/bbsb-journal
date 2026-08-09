@@ -79,8 +79,17 @@ def main():
         rows = []
         for pos_id, legs in by_pos.items():
             legs.sort(key=lambda x: x.time)
-            entries = [d for d in legs if d.entry == mt5.DEAL_ENTRY_IN]
-            exits = [d for d in legs if d.entry in (mt5.DEAL_ENTRY_OUT, mt5.DEAL_ENTRY_OUT_BY)]
+            # DEAL_ENTRY_INOUT is a REVERSAL: one deal that closes the position and
+            # opens the opposite one. It counts as both an exit and an entry. It was
+            # in neither list, so a reversed position looked like it had no exit and
+            # was dropped from the export entirely -- silently, and this feeds the
+            # reconciliation that exists to catch silently-missing trades.
+            inout = [d for d in legs if d.entry == mt5.DEAL_ENTRY_INOUT]
+            entries = [d for d in legs if d.entry == mt5.DEAL_ENTRY_IN] + inout
+            exits = [d for d in legs if d.entry in (mt5.DEAL_ENTRY_OUT,
+                                                    mt5.DEAL_ENTRY_OUT_BY)] + inout
+            entries.sort(key=lambda x: x.time)
+            exits.sort(key=lambda x: x.time)
             if not entries or not exits:
                 continue          # still open, or malformed -- not a closed trade
             first, last = entries[0], exits[-1]
@@ -89,6 +98,13 @@ def main():
                 "symbol": first.symbol,
                 # IN deal type is the direction the POSITION was opened in
                 "direction": "BUY" if first.type == mt5.DEAL_TYPE_BUY else "SELL",
+                # SERVER TIME, not UTC. deal.time is a broker-server timestamp;
+                # passing tz=utc formats the same wall-clock reading and merely
+                # labels it UTC, which it is not (FTMO runs EET/EEST, UTC+2/+3).
+                # Kept as server time deliberately -- it matches the MT5 terminal,
+                # the FTMO dashboard and the existing journal rows. Converting now
+                # would silently shift every date_close by 2-3 hours and break the
+                # window comparison in reconcile_mt5.py against historic rows.
                 "date_open": datetime.fromtimestamp(first.time, timezone.utc)
                                      .strftime("%Y-%m-%d %H:%M:%S"),
                 "date_close": datetime.fromtimestamp(last.time, timezone.utc)

@@ -16,8 +16,12 @@ That silently destroyed the evidence base for two things:
      setups -- the single most important open question about this system.
      Rejected setups are data too, and the gate rejects most of them.
 
-Run this BEFORE /sd-sunday overwrites the table. It is idempotent: rows are
-keyed on (Date, Instrument), so running it twice changes nothing.
+Run this BEFORE /sd-sunday overwrites the table. Rows are keyed on
+(Date, Instrument): running it twice on an unchanged card changes nothing, and
+if a row HAS changed since it was archived the archived copy is updated to match.
+Existing-row-wins was the original behaviour and was wrong -- a corrected or
+re-run Sunday card could never reach the archive, while gate_outcomes.py went on
+measuring the stale copy.
 
 USAGE
   python archive_weekly_bias.py            # archive, report what was added
@@ -65,7 +69,12 @@ def ensure_history_section(soup):
     nav_tab.insert_after(new_tab)
 
     # --- section, inserted directly after the Weekly Bias section ---
+    # Guarded like the nav-tab lookup above. Unguarded, a renamed or missing #wb
+    # section surfaced as an AttributeError on .insert_after several lines below,
+    # which reads as a script bug rather than "the journal structure changed".
     wb_section = soup.find("section", id="wb")
+    if wb_section is None:
+        raise SystemExit("ERROR: could not find the Weekly Bias section (#wb)")
     section = soup.new_tag("section", attrs={"class": "section", "id": DST_SECTION})
 
     hdr = soup.new_tag("div", attrs={"class": "section-header"})
@@ -120,27 +129,45 @@ def main():
 
     dst, created = ensure_history_section(soup)
     dst_body = dst.find("tbody")
-    have = {key_of(tr) for tr in dst_body.find_all("tr") if key_of(tr)}
+    # Map key -> existing row, so a re-archived key can be UPDATED rather than
+    # dropped. Previously this was a set and an existing key simply won: a Sunday
+    # card that was corrected or re-run could never reach the archive, and because
+    # gate_outcomes.py reads history, the stale copy is what got measured. The
+    # freshly-written card is by definition the more correct one.
+    existing = {}
+    for tr in dst_body.find_all("tr"):
+        k = key_of(tr)
+        if k:
+            existing[k] = tr
 
-    added, skipped = [], []
+    added, updated, unchanged = [], [], []
     for tr in src_rows:
         k = key_of(tr)
         if k is None:
             continue
-        if k in have:
-            skipped.append(k)
+        old = existing.get(k)
+        if old is not None:
+            if str(old) == str(tr):
+                unchanged.append(k)
+                continue
+            if not check_only:
+                old.replace_with(tr.__copy__())
+            updated.append(k)
             continue
         if not check_only:
             dst_body.append(tr.__copy__())
-        have.add(k)
+        existing[k] = tr
         added.append(k)
 
     if created:
         print(f"Created #{DST_ID} section (first run).")
-    print(f"Archived {len(added)} row(s); {len(skipped)} already present.")
+    print(f"Archived {len(added)} new, {len(updated)} updated, "
+          f"{len(unchanged)} already identical.")
     for d, inst in added:
         print(f"  + {d}  {inst}")
-    if skipped and not added:
+    for d, inst in updated:
+        print(f"  ~ {d}  {inst}  (row changed since it was archived)")
+    if unchanged and not added and not updated:
         print("  (nothing new -- already archived)")
 
     if check_only:
@@ -154,7 +181,7 @@ def main():
     JOURNAL.write_text(html, encoding="utf-8")
     print(f"\nWrote {JOURNAL}")
     print("Now commit and push the journal repo so GitHub Pages picks it up.")
-    return 0 if (added or skipped) else 1
+    return 0 if (added or updated or unchanged) else 1
 
 
 if __name__ == "__main__":

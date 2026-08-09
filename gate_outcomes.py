@@ -166,9 +166,18 @@ def evaluate(row, days):
         res["status"] = f"too recent (needs {days}d)"
         return res
 
+    # Select into Market Watch first. CLAUDE.md § EXECUTION TICKERS: only 11 of 166
+    # symbols are visible by default and gold and every index are hidden, so
+    # copy_rates_range on an unselected symbol returns empty. That degraded into a
+    # generic "no rates" count indistinguishable from a genuine data gap -- it works
+    # today only because the watchlist happens to be aligned.
+    if not mt5.symbol_select(tk, True):
+        res["status"] = "symbol_select failed"
+        return res
+
     rates = mt5.copy_rates_range(tk, mt5.TIMEFRAME_H1, start, end)
     if rates is None or len(rates) == 0:
-        res["status"] = "no rates"
+        res["status"] = "no rates (symbol selected, so this is a real data gap)"
         return res
 
     open0 = float(rates[0]["open"])

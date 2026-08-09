@@ -22,6 +22,7 @@ USAGE
 import argparse
 import csv
 import os
+import re
 import sys
 from datetime import datetime
 
@@ -130,17 +131,21 @@ def load_journal():
 
 
 def ticket_of(note):
-    """Journal rows carry the broker ticket inside Notes as '#<digits>'."""
-    if "#" not in note:
+    """Journal rows carry the broker ticket inside Notes as 'Ticket #<digits>'.
+
+    Anchored on the literal 'Ticket #' where possible. The old version split on
+    the FIRST '#' anywhere in Notes and took the digits after it -- Notes is long
+    free text (the 2026-08-04 row is a multi-paragraph post-mortem), so any other
+    '#' earlier in the string silently yielded the wrong key or None, and the
+    ticket is the ONLY reliable join for reconciliation.
+    """
+    if not note:
         return None
-    tail = note.split("#", 1)[1]
-    digits = ""
-    for ch in tail:
-        if ch.isdigit():
-            digits += ch
-        else:
-            break
-    return digits or None
+    m = re.search(r"[Tt]icket\s*#\s*(\d+)", note)
+    if m:
+        return m.group(1)
+    m = re.search(r"#(\d{6,})", note)      # fallback: a plausibly-ticket-length run
+    return m.group(1) if m else None
 
 
 def main():
@@ -155,7 +160,20 @@ def main():
 
     deals = load_export(args.export)
     soup, table, hdr, jrows = load_journal()
-    jtickets = {t: r for r in jrows if (t := ticket_of(r.get("Notes", "")))}
+    # Detect duplicates BEFORE collapsing. Building this dict silently kept the
+    # last row for a repeated ticket, so a trade logged twice -- the natural result
+    # of running --apply against overlapping exports -- vanished from the count and
+    # double-counted in the P&L sum, which is drift of exactly the kind this script
+    # exists to surface.
+    jtickets, dup_tickets = {}, {}
+    for r in jrows:
+        t = ticket_of(r.get("Notes", ""))
+        if not t:
+            continue
+        if t in jtickets:
+            dup_tickets.setdefault(t, 1)
+            dup_tickets[t] += 1
+        jtickets[t] = r
 
     missing = [d for d in deals if d["id"] not in jtickets]
     orphans = [r for r in jrows if ticket_of(r.get("Notes", "")) is None]
@@ -240,6 +258,12 @@ def main():
             print(f"     #{t}  {r.get('Date_Close','?')}  {r.get('Instrument','?')}")
         if len(unmatched_journal) > 10:
             print(f"     ... and {len(unmatched_journal) - 10} more")
+    if dup_tickets:
+        ok = False
+        print(f"\n!! {len(dup_tickets)} DUPLICATE TICKET(S) IN THE JOURNAL")
+        print("   The same trade is logged more than once — P&L is double-counted.")
+        for t, n in dup_tickets.items():
+            print(f"     #{t}  x{n}")
     if orphans:
         ok = False
         print(f"\n!! {len(orphans)} JOURNAL ROW(S) WITH NO TICKET — cannot be verified")
