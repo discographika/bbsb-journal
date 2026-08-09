@@ -60,6 +60,17 @@ import MetaTrader5 as mt5
 TERMINAL = r"C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe"
 JOURNAL = Path(__file__).with_name("index.html")
 
+# A zone-less row is ambiguous: was the search run and empty, or never run?
+# The marker is the Notes string, NOT the date. /sd-sunday writes
+# "NO ZONE (searched 120 bars)" when the search ran and found nothing.
+#
+# Do NOT use a date cutoff here. Step 3G changed ON 2026-08-09, partway through
+# that day, so the card already written that morning has zone-less gated rows
+# that were never searched while carrying the same date. A date test reports
+# them as "searched, found nothing" -- the exact conflation this is meant to
+# prevent, just moved somewhere harder to notice.
+SEARCHED_MARKER = "NO ZONE (SEARCHED"
+
 # watchlist name -> FTMO execution ticker
 TICKER = {
     "EURUSD": "EURUSD", "GBPUSD": "GBPUSD", "AUDUSD": "AUDUSD",
@@ -70,13 +81,24 @@ TICKER = {
 
 
 def bias_dir(text):
-    """Extract a direction from free-text W_Bias. Returns +1 / -1 / 0."""
+    """Extract a direction from free-text W_Bias. Returns +1 / -1 / 0.
+
+    RANGING is checked FIRST and wins. W_Bias is free text and routinely reads
+    like 'RANGING (was bullish)' or 'BULLISH -> ranging' -- substring-matching
+    BULLISH/BEARISH before ruling out RANGING would sign a directionless week
+    and feed a fake forward return into the macro-status averages.
+    """
     t = (text or "").upper()
-    if "BULLISH" in t:
+    if "RANGING" in t or "RANGE" in t or "NEUTRAL" in t:
+        return 0
+    has_bull, has_bear = "BULLISH" in t, "BEARISH" in t
+    if has_bull and has_bear:
+        return 0      # e.g. 'bearish, turning bullish' -- ambiguous, do not sign
+    if has_bull:
         return 1
-    if "BEARISH" in t:
+    if has_bear:
         return -1
-    return 0          # RANGING / unknown -- forward return is not signable
+    return 0          # unknown -- forward return is not signable
 
 
 def num(s):
@@ -123,7 +145,8 @@ def evaluate(row, days):
            "macro": row.get("Macro_Status"), "bb_score": row.get("BB_Score"),
            "sb_score": row.get("SB_Score"), "trade": row.get("Trade_Y_N"),
            "bias": row.get("W_Bias", "")[:24], "status": "", "fwd_5d": None,
-           "reached": None, "r_mult": None, "has_zone": False}
+           "reached": None, "r_mult": None, "has_zone": False,
+           "notes": row.get("Notes", "")}
     # Set from the row itself, BEFORE any early return -- coverage reporting must
     # count rows that are merely too recent to evaluate, not just evaluated ones.
     res["has_zone"] = bool(
@@ -250,9 +273,19 @@ def main():
     blind = [r for r in skips if not r["has_zone"]]
     print(f"  SKIP rows: {len(skips)}   with a zone (measurable): "
           f"{len(skips) - len(blind)}   without (blind): {len(blind)}")
-    if blind:
-        print(f"  {len(blind)} blind row(s) are pre-2026-08-09 and cannot be")
-        print("  backfilled -- the zone had to be read off the chart at the time.")
+    # Split by date rather than asserting. Before 2026-08-09 Step 3G skipped the
+    # zone search on gated rows, so a blank there means NEVER SEARCHED and cannot
+    # be backfilled. From 2026-08-09 the BB search always runs, so a blank means
+    # SEARCHED AND FOUND NOTHING -- a real result, and a different thing entirely.
+    # Conflating the two is the exact distinction this fix exists to preserve.
+    searched = [r for r in blind if SEARCHED_MARKER in (r["notes"] or "").upper()]
+    never = [r for r in blind if SEARCHED_MARKER not in (r["notes"] or "").upper()]
+    if searched:
+        print(f"  {len(searched)} searched, no qualifying zone found -- a real result")
+    if never:
+        print(f"  {len(never)} never searched -- cannot be backfilled, the zone had")
+        print("     to be read off the chart at the time. Step 3G skipped the search")
+        print("     on gated rows until 2026-08-09; these predate the fix.")
 
     cmp_ = {}
     for r in done:
@@ -277,11 +310,22 @@ def main():
         print("  (gated-with-zone AND let-through). Re-run weekly.")
 
     if args.csv:
+        # Fixed field list, not results[0].keys() -- that raised IndexError on an
+        # empty journal, i.e. it failed exactly when you were checking whether
+        # anything had been recorded at all.
+        cols = ["date", "instrument", "ticker", "macro", "bb_score", "sb_score",
+                "trade", "bias", "status", "fwd_pct", "reached", "r_mult", "has_zone"]
         with open(args.csv, "w", encoding="utf-8", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=list(results[0].keys()))
+            w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore")
             w.writeheader()
-            w.writerows(results)
-        print(f"\ndetail -> {args.csv}")
+            for r in results:
+                # fwd_5d is the in-memory name; the column is fwd_pct because the
+                # window is --days (default 10), so "5d" was wrong for every
+                # invocation that did not explicitly pass --days 5.
+                row = dict(r)
+                row["fwd_pct"] = row.pop("fwd_5d", None)
+                w.writerow(row)
+        print(f"\ndetail ({len(results)} rows, window {args.days}d) -> {args.csv}")
     return 0
 
 

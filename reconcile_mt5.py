@@ -23,6 +23,7 @@ import argparse
 import csv
 import os
 import sys
+from datetime import datetime
 
 from bs4 import BeautifulSoup
 
@@ -40,7 +41,13 @@ FIELD_ALIASES = {
     "qty":    ("qty", "lots", "volume", "size"),
     "fee":    ("fee", "commission", "comm"),
     "swap":   ("swap", "rollover"),
-    "pnl":    ("pnl", "p&l", "profit", "net", "net_$"),
+    # GROSS vs NET must stay separate. MT5's `profit` field (and mt5_export_deals.py,
+    # which writes it straight through at :102) is GROSS — commission and swap sit in
+    # their own columns. Folding "profit" into the net aliases made this script read a
+    # gross figure as net, so every comparison was wrong by (commission + swap) per
+    # trade, and the delta check below then failed on a difference it had invented.
+    "pnl":    ("pnl", "p&l", "net", "net_$"),          # already net of costs
+    "gross":  ("profit", "gross", "gross_$"),          # needs + fee + swap
     "tq":     ("tq", "trade quality", "quality"),
 }
 
@@ -72,6 +79,15 @@ def load_export(path):
         tid = pick(r, "id")
         if not tid:
             continue
+        fee = money(pick(r, "fee")) or 0.0
+        swap = money(pick(r, "swap")) or 0.0
+        # Prefer a genuine net column; otherwise derive it from gross + costs.
+        # MT5 signs commission and swap NEGATIVE for costs, so this is a sum, not
+        # a subtraction -- matching mt5_export_deals.py:120.
+        net = money(pick(r, "pnl"))
+        if net is None:
+            g = money(pick(r, "gross"))
+            net = None if g is None else round(g + fee + swap, 2)
         out.append({
             "id": tid,
             "symbol": pick(r, "symbol").upper(),
@@ -81,12 +97,23 @@ def load_export(path):
             "entry": pick(r, "entry"),
             "exit": pick(r, "exit"),
             "qty": pick(r, "qty"),
-            "fee": money(pick(r, "fee")) or 0.0,
-            "swap": money(pick(r, "swap")) or 0.0,
-            "pnl": money(pick(r, "pnl")),
+            "fee": fee,
+            "swap": swap,
+            "pnl": net,
             "tq": pick(r, "tq"),
         })
     return out
+
+
+def as_date(text):
+    """Parse a journal or export timestamp to a date. None if unparseable."""
+    t = (text or "").strip()
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(t[:len(fmt) + 2].strip(), fmt).date()
+        except ValueError:
+            continue
+    return None
 
 
 def load_journal():
@@ -140,11 +167,36 @@ def main():
             if jp is not None and abs(jp - d["pnl"]) > 0.01:
                 mismatch.append((d, jp))
 
-    exp_pnl = sum(d["pnl"] for d in deals if d["pnl"] is not None)
-    jrn_pnl = sum(v for r in jrows if (v := money(r.get("Net_$", ""))) is not None)
+    # --- SCOPE THE COMPARISON TO THE EXPORT'S OWN DATE WINDOW -----------------
+    # An export covers a finite range; the journal covers all history. Comparing
+    # a windowed export against the whole journal guarantees a non-zero delta,
+    # which after the 2026-08-09 hardening made this script exit 1 unconditionally
+    # -- and a check that always fails gets ignored, which is the same end state
+    # as the check that always passed.
+    #
+    # Acute after the FTMO migration: the journal holds 43 The5ers-era rows whose
+    # tickets can NEVER appear in an FTMO export. Those are out of scope, not drift.
+    exp_dates = [d for d in (as_date(x["close"]) for x in deals) if d]
+    lo, hi = (min(exp_dates), max(exp_dates)) if exp_dates else (None, None)
 
+    def in_window(r):
+        if lo is None:
+            return False
+        d = as_date(r.get("Date_Close", ""))
+        return d is not None and lo <= d <= hi
+
+    scoped = [r for r in jrows if in_window(r)]
+    outside = len(jrows) - len(scoped)
+
+    exp_pnl = sum(d["pnl"] for d in deals if d["pnl"] is not None)
+    jrn_pnl = sum(v for r in scoped if (v := money(r.get("Net_$", ""))) is not None)
+
+    win = f"{lo} .. {hi}" if lo else "(no parseable dates)"
+    print(f"window  : {win}")
     print(f"export  : {len(deals)} deals   net ${exp_pnl:,.2f}")
-    print(f"journal : {len(jrows)} rows    net ${jrn_pnl:,.2f}")
+    print(f"journal : {len(scoped)} rows in window   net ${jrn_pnl:,.2f}")
+    if outside:
+        print(f"          ({outside} journal row(s) outside the window — not compared)")
     print(f"delta   : ${exp_pnl - jrn_pnl:,.2f}\n")
 
     # Reverse direction. Added 2026-08-09 after this script reported
@@ -158,8 +210,12 @@ def main():
     #
     # That is the exact failure this script exists to prevent — a reconciliation
     # that reports OK when it has actually checked nothing.
+    #
+    # Scoped to the export window (see above): a row the export never claimed to
+    # cover is unverified-by-this-export, not evidence of drift. Widen the export
+    # range to verify older rows.
     export_ids = {d["id"] for d in deals}
-    unmatched_journal = [(t, r) for r in jrows
+    unmatched_journal = [(t, r) for r in scoped
                          if (t := ticket_of(r.get("Notes", ""))) and t not in export_ids]
 
     delta = exp_pnl - jrn_pnl
