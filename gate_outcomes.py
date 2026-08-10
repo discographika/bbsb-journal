@@ -1,15 +1,39 @@
 #!/usr/bin/env python3
-"""Measure what price DID after each flagged setup, so the macro gate can be judged.
+"""Measure what price DID after each flagged setup.
 
-THE QUESTION
-    The 2026-08-09 backtest put the entry model at PF 1.12 -- and 0.97 excluding
-    gold -- measured UNGATED, because COT/Valuation/Seasonality have no
-    retrievable history. So the system's central component is unmeasured:
+    #### 2026-08-10 -- THE GATE QUESTION THIS WAS BUILT FOR IS CLOSED. ####
 
-        Does the macro gate select better-than-random setups?
+    This script was written to answer "does the macro gate select better-than-
+    random setups?" by accumulating ~20 forward rows in Bias History. That plan
+    is retired: the question was answered a different way, and the forward
+    method turned out to be incapable of answering it at all.
 
-    Three decisions hang on the answer: whether FX trading resumes, whether the
-    B2-B6 indicator rebuild gets built, and whether the gate is worth keeping.
+    WHAT HAPPENED
+        COT history IS retrievable after all -- via Pine, not the MCP (raw CFTC
+        data is free through TradingView/LibraryCOT). So the gate was applied
+        historically across 161 backtest trades instead of waiting ~5 Sundays.
+        Result: ungated PF 0.954 -> gated 1.021, but nothing significant, the
+        gate helped only 4 of 10 instruments, and it loses to its own inverse.
+        Full report: pine/COT_GATE_VALIDATION_2026-08-10.md
+
+    WHY 20 ROWS WAS NEVER GOING TO WORK
+        Detecting an edge of the observed size needs ~700-3,000 trades PER ARM
+        at 80% power. Twenty rows is two orders of magnitude short. Any
+        "gated vs flagged" summary this script prints on a handful of rows is
+        noise -- do not report it as a finding, in either direction.
+
+        The same applies to the FX resumption trigger, which is the identical
+        20-setup counter (CLAUDE.md § FX SUSPENSION).
+
+    WHAT THIS SCRIPT IS STILL GOOD FOR -- and it is genuinely useful
+        - Does ZONE SCORE predict outcome? (8/8 vs 7/8 vs 6/8). This is the
+          live question and it is NOT affected by the gate finding.
+        - Did the forward move favour the recorded W_Bias?
+        - Sanity-checking that recorded zones behave the way the method claims.
+
+        Those need a large sample too, so treat everything here as descriptive
+        until the row count is in the hundreds. Keep accumulating; just stop
+        expecting a verdict at 20.
 
 WHAT THIS CAN AND CANNOT ANSWER  -- read before trusting a summary
     CAN:  does ZONE SCORE predict outcome?  (8/8 vs 7/8 vs 6/8)
@@ -24,9 +48,14 @@ WHAT THIS CAN AND CANNOT ANSWER  -- read before trusting a summary
 
           FIXED 2026-08-09: Step 3G now runs the BB search on gated instruments
           and records it (SB is still skipped; Trade_Y_N still forces NO). So
-          SKIP rows dated 2026-08-09 onward ARE measurable. The
-          gated-vs-flagged comparison becomes real once ~20 of them accumulate
-          -- roughly 5 Sundays at ~4 gated instruments per card.
+          SKIP rows dated 2026-08-09 onward ARE measurable.
+
+          SUPERSEDED 2026-08-10: this used to say the gated-vs-flagged
+          comparison "becomes real once ~20 of them accumulate -- roughly 5
+          Sundays". That was wrong by two orders of magnitude. See the header.
+          Recording the zones is still right -- it costs ~4 BB searches a
+          Sunday and it is the only counterfactual there will ever be -- but do
+          not expect it to settle the gate.
 
     Also: the gate has only ever emitted SKIP or WEAK. MODERATE/HIGH/A+ MAX have
           never fired (see the NEUTRAL-bottleneck note in CLAUDE.md), so there is
