@@ -17,7 +17,10 @@ That silently destroyed the evidence base for two things:
      Rejected setups are data too, and the gate rejects most of them.
 
 Run this BEFORE /sd-sunday overwrites the table. Rows are keyed on
-(Date, Instrument): running it twice on an unchanged card changes nothing, and
+(Date, Instrument, BB_Zone_Type) -- one row per ZONE, not per instrument, since
+2026-08-15. See key_of() below for why: the search now runs both directions, so
+an instrument legitimately appears twice on one card and a 2-part key silently
+dropped one of them. Running it twice on an unchanged card changes nothing, and
 if a row HAS changed since it was archived the archived copy is updated to match.
 Existing-row-wins was the original behaviour and was wrong -- a corrected or
 re-run Sunday card could never reach the archive, while gate_outcomes.py went on
