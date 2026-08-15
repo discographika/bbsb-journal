@@ -3,3 +3,9 @@
 # mt5_trades_2026-08-02.csv IS committed: it is the reference copy showing the
 # expected column shape, and the export that exposed the 13-vs-42 gap.
 mt5_deals_*.csv
+
+# Python bytecode — machine-local and regenerated on import. Was tracked by
+# accident (gate_outcomes.cpython-314.pyc); a committed .pyc can shadow an
+# edited .py on another machine and silently run stale gate logic.
+__pycache__/
+*.pyc
