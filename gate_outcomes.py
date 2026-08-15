@@ -150,7 +150,14 @@ def load_rows():
             cells = [td.get_text(strip=True) for td in tr.find_all("td")]
             if cells:
                 out.append(dict(zip(hdr, cells)))
-    # Dedupe on (Date, Instrument), FIRST WINS -- so the live card beats history.
+    # Dedupe on (Date, Instrument, BB_Zone_Type), FIRST WINS -- live card beats history.
+    #
+    # BB_Zone_Type joined the key on 2026-08-15, when /sd-sunday started searching
+    # both directions and writing one row per ZONE rather than per instrument. An
+    # instrument can now appear twice on a card, once DEMAND and once SUPPLY, with
+    # DIFFERENT Macro_Status and Trade_Y_N -- the gate is evaluated per zone. On the
+    # old two-part key the second zone was dropped as a duplicate, so this study
+    # would have measured half the setups while reporting a full sample.
     # In normal operation the two never overlap (history holds past weeks, the
     # card holds this one). They overlap only when a Sunday is re-run or a row
     # is corrected: Step 0 archives the OLD card, then rewrites the live one.
@@ -159,7 +166,7 @@ def load_rows():
     # fix if the card were re-run to pick up zones on gated rows.
     seen, uniq = set(), []
     for r in out:
-        k = (r.get("Date"), r.get("Instrument"))
+        k = (r.get("Date"), r.get("Instrument"), r.get("BB_Zone_Type", ""))
         if k in seen:
             continue
         seen.add(k)

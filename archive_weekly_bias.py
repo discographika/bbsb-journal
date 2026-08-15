@@ -40,12 +40,32 @@ DST_ID = "weekly-bias-history"
 DST_SECTION = "wbh"
 
 
+BB_ZONE_TYPE_COL = 11  # Date,Instrument,W_Bias,Strength,Valuation,Seasonal,
+                       # COT_Index_Value,COT_Verdict,Macro_Status,
+                       # BB_Zone_Top,BB_Zone_Bot,BB_Zone_Type <- 11
+
+
 def key_of(tr):
-    """Dedup key: (Date, Instrument) -- one row per instrument per card."""
+    """Dedup key: (Date, Instrument, BB_Zone_Type) -- one row per ZONE.
+
+    ZONE, not instrument, since 2026-08-15. /sd-sunday now searches both
+    directions and writes a row per zone, so an instrument can legitimately
+    appear twice on one card -- once DEMAND, once SUPPLY.
+
+    Keying on (Date, Instrument) silently archived whichever row came first
+    and DROPPED the other, permanently. That is the exact failure this script
+    exists to prevent: the second zone would never reach Bias History, and
+    gate_outcomes.py would measure half the setups while looking complete.
+
+    Rows predating the change carry a single BB_Zone_Type and key identically
+    to before, so already-archived history is unaffected.
+    """
     tds = tr.find_all("td")
     if len(tds) < 2:
         return None
-    return (tds[0].get_text(strip=True), tds[1].get_text(strip=True))
+    zone = (tds[BB_ZONE_TYPE_COL].get_text(strip=True)
+            if len(tds) > BB_ZONE_TYPE_COL else "")
+    return (tds[0].get_text(strip=True), tds[1].get_text(strip=True), zone)
 
 
 def ensure_history_section(soup):
@@ -163,10 +183,12 @@ def main():
         print(f"Created #{DST_ID} section (first run).")
     print(f"Archived {len(added)} new, {len(updated)} updated, "
           f"{len(unchanged)} already identical.")
-    for d, inst in added:
-        print(f"  + {d}  {inst}")
-    for d, inst in updated:
-        print(f"  ~ {d}  {inst}  (row changed since it was archived)")
+    # Keys are 3-tuples (Date, Instrument, BB_Zone_Type) since 2026-08-15 -- the
+    # zone type is printed so a two-row instrument is legible in the report.
+    for d, inst, zone in added:
+        print(f"  + {d}  {inst:<8} {zone}")
+    for d, inst, zone in updated:
+        print(f"  ~ {d}  {inst:<8} {zone}  (row changed since it was archived)")
     if unchanged and not added and not updated:
         print("  (nothing new -- already archived)")
 
